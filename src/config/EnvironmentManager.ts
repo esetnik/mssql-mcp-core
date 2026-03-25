@@ -178,6 +178,9 @@ export class EnvironmentManager {
       connectionTimeout: process.env.CONNECTION_TIMEOUT
         ? parseInt(process.env.CONNECTION_TIMEOUT, 10)
         : 30,
+      requestTimeout: process.env.REQUEST_TIMEOUT
+        ? parseInt(process.env.REQUEST_TIMEOUT, 10)
+        : 120,
       readonly: process.env.READONLY === "true",
       odbcDriver: process.env.SQL_ODBC_DRIVER,
     };
@@ -388,12 +391,15 @@ export class EnvironmentManager {
         // Requires SQL_DRIVER=msnodesqlv8 and the msnodesqlv8 npm package.
         const odbcDriver = env.odbcDriver || "ODBC Driver 17 for SQL Server";
         const trustCert = env.trustServerCertificate ? "TrustServerCertificate=Yes;" : "";
+        const connTimeout = env.connectionTimeout || 30;
+        const queryTimeout = env.requestTimeout || 120;
         const connStr =
           `Driver={${odbcDriver}};` +
           `Server=${env.server};` +
           `Database=${env.database};` +
           `Trusted_Connection=Yes;` +
           `Encrypt=No;` +
+          `Connection Timeout=${connTimeout};` +
           trustCert;
 
         return {
