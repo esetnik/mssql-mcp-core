@@ -30,6 +30,17 @@ export interface EnvironmentConfig {
    */
   odbcDriver?: string;
 
+  /**
+   * Full ODBC connection string. When provided, this is passed directly to
+   * msnodesqlv8 and all other connection properties (server, database,
+   * authMode, username, password, domain, etc.) are ignored.
+   *
+   * Requires SQL_DRIVER=msnodesqlv8.
+   *
+   * Example: "Driver={ODBC Driver 17 for SQL Server};Server=myserver;Database=mydb;Trusted_Connection=Yes;"
+   */
+  connectionString?: string;
+
   // Governance controls
   readonly?: boolean;
   allowedTools?: string[];
@@ -156,19 +167,21 @@ export class EnvironmentManager {
     // Since loadFromEnvVars is sync and only needs env vars, build the resolver directly.
     this.secretResolver = new SecretResolver([]);
 
+    const connectionString = process.env.SQL_CONNECTION_STRING;
     const server = process.env.SERVER_NAME;
     const database = process.env.DATABASE_NAME;
 
-    if (!server || !database) {
+    if (!connectionString && (!server || !database)) {
       throw new Error(
-        "No environment config file provided and SERVER_NAME/DATABASE_NAME env vars not set"
+        "No environment config file provided and neither SQL_CONNECTION_STRING " +
+        "nor SERVER_NAME/DATABASE_NAME env vars are set"
       );
     }
 
     const defaultEnv: EnvironmentConfig = {
       name: "default",
-      server,
-      database,
+      server: server || ".",  // placeholder when using connectionString
+      database: database || "",
       port: process.env.SQL_PORT ? parseInt(process.env.SQL_PORT, 10) : undefined,
       authMode: (process.env.SQL_AUTH_MODE?.toLowerCase() as any) ?? "aad",
       username: process.env.SQL_USERNAME,
@@ -183,6 +196,7 @@ export class EnvironmentManager {
         : 120,
       readonly: process.env.READONLY === "true",
       odbcDriver: process.env.SQL_ODBC_DRIVER,
+      connectionString,
     };
 
     this.environments.set("default", defaultEnv);
@@ -362,6 +376,20 @@ export class EnvironmentManager {
         idleTimeoutMillis: 30000,
       },
     };
+
+    // Full connection string takes priority — pass it directly to the driver
+    // and skip all auth mode logic.
+    if (env.connectionString) {
+      return {
+        config: {
+          server: env.server,
+          connectionString: env.connectionString,
+          connectionTimeout: (env.connectionTimeout || 30) * 1000,
+          requestTimeout: (env.requestTimeout || 120) * 1000,
+          pool: { max: 10, min: 0, idleTimeoutMillis: 30000 },
+        } as unknown as sql.config,
+      };
+    }
 
     if (env.authMode === "sql") {
       if (!env.username || !env.password) {
