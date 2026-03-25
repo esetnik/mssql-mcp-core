@@ -23,6 +23,13 @@ export interface EnvironmentConfig {
   connectionTimeout?: number;
   requestTimeout?: number;
 
+  /**
+   * ODBC driver name for integrated Windows auth (msnodesqlv8).
+   * Defaults to "ODBC Driver 17 for SQL Server".
+   * Only used when authMode is "windows" and no password is provided.
+   */
+  odbcDriver?: string;
+
   // Governance controls
   readonly?: boolean;
   allowedTools?: string[];
@@ -172,6 +179,7 @@ export class EnvironmentManager {
         ? parseInt(process.env.CONNECTION_TIMEOUT, 10)
         : 30,
       readonly: process.env.READONLY === "true",
+      odbcDriver: process.env.SQL_ODBC_DRIVER,
     };
 
     this.environments.set("default", defaultEnv);
@@ -371,9 +379,40 @@ export class EnvironmentManager {
     }
 
     if (env.authMode === "windows") {
-      if (!env.username || !env.password) {
+      // Two sub-modes based on whether a password is provided:
+      //  1. No password → integrated auth via ODBC (requires SQL_DRIVER=msnodesqlv8)
+      //  2. With password → NTLM auth via tedious (default driver)
+
+      if (!env.password) {
+        // Integrated Windows Authentication via ODBC connection string.
+        // Requires SQL_DRIVER=msnodesqlv8 and the msnodesqlv8 npm package.
+        const odbcDriver = env.odbcDriver || "ODBC Driver 17 for SQL Server";
+        const trustCert = env.trustServerCertificate ? "TrustServerCertificate=Yes;" : "";
+        const connStr =
+          `Driver={${odbcDriver}};` +
+          `Server=${env.server};` +
+          `Database=${env.database};` +
+          `Trusted_Connection=Yes;` +
+          `Encrypt=No;` +
+          trustCert;
+
+        return {
+          config: {
+            // The connectionString drives the actual connection, but the mssql
+            // package still validates that `server` is a non-empty string.
+            server: env.server,
+            connectionString: connStr,
+            connectionTimeout: (env.connectionTimeout || 30) * 1000,
+            requestTimeout: (env.requestTimeout || 120) * 1000,
+            pool: { max: 10, min: 0, idleTimeoutMillis: 30000 },
+          } as unknown as sql.config,
+        };
+      }
+
+      // NTLM auth with explicit password (tedious driver)
+      if (!env.username) {
         throw new Error(
-          `Environment '${env.name}' requires username and password for Windows auth`
+          `Environment '${env.name}' requires username for Windows NTLM auth`
         );
       }
 

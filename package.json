@@ -57,7 +57,13 @@
   },
   "optionalDependencies": {
     "@aws-sdk/client-cloudwatch-logs": "^3.992.0",
-    "@aws-sdk/client-secrets-manager": "^3.700.0"
+    "@aws-sdk/client-secrets-manager": "^3.700.0",
+    "msnodesqlv8": "^5.1.5"
+  },
+  "peerDependenciesMeta": {
+    "msnodesqlv8": {
+      "optional": true
+    }
   },
   "type": "module"
 }
