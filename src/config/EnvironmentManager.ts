@@ -428,6 +428,7 @@ export class EnvironmentManager {
           `Trusted_Connection=Yes;` +
           `Encrypt=No;` +
           `Connection Timeout=${connTimeout};` +
+          `Command Timeout=${queryTimeout};` +
           trustCert;
 
         return {

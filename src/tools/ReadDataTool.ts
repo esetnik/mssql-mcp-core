@@ -346,16 +346,43 @@ export class ReadDataTool implements Tool {
     } catch (error) {
       console.error("Error executing query:", error);
 
-      // Don't expose internal error details to prevent information leakage
       const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
-      const safeErrorMessage = errorMessage.includes("Invalid object name")
-        ? errorMessage
-        : "Database query execution failed";
+      const lowerMessage = errorMessage.toLowerCase();
+
+      // Classify the error for the caller while keeping useful diagnostic detail.
+      // We allowlist patterns that are safe to surface (no connection strings, credentials, etc.).
+      let errorCode = "QUERY_EXECUTION_FAILED";
+      let safeErrorMessage = errorMessage; // default: pass through
+
+      if (lowerMessage.includes("timeout") || lowerMessage.includes("timed out")) {
+        errorCode = "QUERY_TIMEOUT";
+        safeErrorMessage = `Query timed out. ${errorMessage}`;
+      } else if (lowerMessage.includes("invalid object name")) {
+        errorCode = "INVALID_OBJECT";
+      } else if (lowerMessage.includes("invalid column name")) {
+        errorCode = "INVALID_COLUMN";
+      } else if (lowerMessage.includes("permission") || lowerMessage.includes("denied")) {
+        errorCode = "PERMISSION_DENIED";
+      } else if (lowerMessage.includes("syntax") || lowerMessage.includes("incorrect syntax")) {
+        errorCode = "SYNTAX_ERROR";
+      } else if (lowerMessage.includes("conversion") || lowerMessage.includes("converting")) {
+        errorCode = "TYPE_CONVERSION_ERROR";
+      } else if (lowerMessage.includes("ambiguous column")) {
+        errorCode = "AMBIGUOUS_COLUMN";
+      } else if (lowerMessage.includes("divide by zero")) {
+        errorCode = "DIVIDE_BY_ZERO";
+      } else if (lowerMessage.includes("deadlock")) {
+        errorCode = "DEADLOCK";
+      } else if (lowerMessage.includes("connection") || lowerMessage.includes("transport")) {
+        // Redact connection errors — may contain server names or credentials
+        errorCode = "CONNECTION_ERROR";
+        safeErrorMessage = "Database connection error. Check server availability.";
+      }
 
       return {
         success: false,
         message: `Failed to execute query: ${safeErrorMessage}`,
-        error: "QUERY_EXECUTION_FAILED",
+        error: errorCode,
       };
     }
   }
