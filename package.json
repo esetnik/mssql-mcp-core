@@ -1,6 +1,6 @@
 {
   "name": "@esetnik/mssql-mcp-core",
-  "version": "0.5.1",
+  "version": "0.5.2",
   "description": "Shared core library for MSSQL MCP servers - tools, config, routing, and server harness (fork of @connorbritain/mssql-mcp-core)",
   "keywords": [
     "mcp",
@@ -31,7 +31,8 @@
     ".": {
       "import": "./dist/index.js",
       "types": "./dist/index.d.ts"
-    }
+    },
+    "./dist/preload-driver.js": "./dist/preload-driver.js"
   },
   "scripts": {
     "build": "tsc",
