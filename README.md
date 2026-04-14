@@ -1,4 +1,6 @@
-# @connorbritain/mssql-mcp-core
+# @esetnik/mssql-mcp-core
+
+> Fork of [@connorbritain/mssql-mcp-core](https://github.com/ConnorBritain/mssql-mcp-core) with added support for ODBC connection strings, Windows Integrated Authentication, REQUEST_TIMEOUT / command timeout, and classified query error codes.
 
 Shared core library for the MSSQL MCP tiered package family. This package provides every tool class, the MCP server harness, environment management, audit logging, secret resolution, intent routing, and policy enforcement middleware. Consumer packages (reader, writer, server) depend on this library and call `startMcpServer()` with a tier to get a fully configured MCP server.
 

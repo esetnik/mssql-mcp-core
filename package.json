@@ -1,7 +1,7 @@
 {
-  "name": "@connorbritain/mssql-mcp-core",
-  "version": "0.5.0",
-  "description": "Shared core library for MSSQL MCP servers - tools, config, routing, and server harness",
+  "name": "@esetnik/mssql-mcp-core",
+  "version": "0.5.1",
+  "description": "Shared core library for MSSQL MCP servers - tools, config, routing, and server harness (fork of @connorbritain/mssql-mcp-core)",
   "keywords": [
     "mcp",
     "sql-server",
@@ -16,11 +16,14 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/ConnorBritain/mssql-mcp-core.git"
+    "url": "https://github.com/esetnik/mssql-mcp-core.git"
   },
-  "homepage": "https://github.com/ConnorBritain/mssql-mcp-core",
+  "homepage": "https://github.com/esetnik/mssql-mcp-core",
   "bugs": {
-    "url": "https://github.com/ConnorBritain/mssql-mcp-core/issues"
+    "url": "https://github.com/esetnik/mssql-mcp-core/issues"
+  },
+  "publishConfig": {
+    "access": "public"
   },
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
